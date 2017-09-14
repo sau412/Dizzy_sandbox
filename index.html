@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Dizzy sandbox</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<link href="/favicon.ico" rel="shortcut icon" type="image/png">
+<style>
+canvas {
+    border: 1px solid #000;
+    image-rendering: pixelated;
+    image-rendering: optimizeSpeed;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: -o-crisp-edges;
+    image-rendering: pixelated;
+    -ms-interpolation-mode: nearest-neighbor;
+}
+</style>
+</head>
+<body>
+<canvas id='screen'>Необходима поддержка canvas.</canvas>
+<script>
+scale = 1;
+
+var screen = document.getElementById("screen"),
+	ctx = screen.getContext('2d'),
+	cellSize = 8,
+	pic = new Image(),
+	pic2 = new Image();
+
+ctx.imageSmoothingQuality = "high";
+
+screen.width = 32 * cellSize * scale;
+screen.height = 24 * cellSize * scale;
+
+pic.src = 'http://www.yolkfolk.com/forum/download/file.php?id=227';
+pic2.src = 'http://www.yolkfolk.com/forum/download/file.php?id=229';
+
+i = 0;
+
+pic.onload = function () {
+    draw_dizzy();
+}
+
+// States are: stand, left, right, jump
+dizzy_state="stand";
+dizzy_substate_index=0;
+dizzy_screen_x=128;
+dizzy_screen_y=128;
+
+document.onkeydown=function(info) {
+    var e = e || window.event;
+    if(info.repeat == true) return;
+
+    if (info.which == 37 && dizzy_state!="left") {
+        dizzy_change_state("left");
+    }
+    if (info.which == 39 && dizzy_state!="right") {
+        dizzy_change_state("right");
+    }
+}
+
+document.onkeyup=function(info) {
+    var e = e || window.event;
+    if (info.which == 37) {
+        dizzy_change_state("stand");
+    }
+    if (info.which == 39) {
+        dizzy_change_state("stand");
+    }
+}
+
+function dizzy_change_state(new_state) {
+	dizzy_state=new_state;
+	dizzy_substate_index=0;
+}
+
+function draw_brick(x, y) {
+    ctx.drawImage(pic2, 96, 217, 8, 8, x, y, 8, 8);
+}
+//ctx.scale(2,2);
+
+function draw_dizzy() {
+    var size = 12;
+    var offset = 2;
+    var y_offset=0;
+    if (dizzy_state == "stand") {
+        if(i==2 || i==6) y_offset+=1*scale;
+        if(dizzy_substate_index==0) y_offset=-1;
+        ctx.drawImage(pic, (dizzy_substate_index + 1) * (16 + size) + offset, 3 * (16+size)-8, 16+size, 16+size, dizzy_screen_x, dizzy_screen_y+y_offset, 16+size, 16+size);
+        dizzy_substate_index++;
+        if (dizzy_substate_index >= 2 ) dizzy_substate_index = 0;
+    } else if (dizzy_state == "left") {
+        if(dizzy_substate_index==2 || dizzy_substate_index==6) y_offset=1;
+        ctx.drawImage(pic, dizzy_substate_index * (16+size)+offset, 0, 16+size, 16+size, dizzy_screen_x, dizzy_screen_y+y_offset, 16+size, 16+size);
+        dizzy_substate_index++;
+        if (dizzy_substate_index >= 8 ) dizzy_substate_index = 0;
+	dizzy_screen_x-=4;
+    } else if (dizzy_state == "right") {
+        if(dizzy_substate_index==2 || dizzy_substate_index==6) y_offset=1;
+        ctx.drawImage(pic, dizzy_substate_index * (16+size)+offset, 0, 16+size, 16+size, dizzy_screen_x, dizzy_screen_y+y_offset, 16+size, 16+size);
+        dizzy_substate_index++;
+        if (dizzy_substate_index >= 8 ) dizzy_substate_index = 0;
+	dizzy_screen_x+=4;
+    }
+    if (dizzy_screen_x < 0) dizzy_screen_x=(256-16);
+    if (dizzy_screen_x > 240) dizzy_screen_x=0;
+    for(var x=0;x!=32;x++) draw_brick(x*8, 128+26);
+    setTimeout(draw_dizzy,80);
+}
+
+</script>
+</body>
+</html>
