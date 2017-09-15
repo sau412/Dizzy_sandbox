@@ -5,8 +5,9 @@
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
 <link href="/favicon.ico" rel="shortcut icon" type="image/png">
 <style>
+<!-- This must make pixelated canvas when scaling, but int don't -->
 canvas {
-    border: 1px solid #000;
+    border: 100px solid #000;
     image-rendering: pixelated;
     image-rendering: optimizeSpeed;
     image-rendering: -moz-crisp-edges;
@@ -18,31 +19,42 @@ canvas {
 </style>
 </head>
 <body>
-<canvas id='screen'>Необходима поддержка canvas.</canvas>
+<div style="position: relative;">
+<canvas style="position: absolute; left: 0; top: 0; z-index: 0; border: 40px solid #000;" id='screen_bottom'>Необходима поддержка canvas.</canvas>
+<canvas style="position: absolute; left: 0; top: 0; z-index: 1; border: 40px solid #000;" id='screen'>Необходима поддержка canvas.</canvas>
+<canvas style="position: absolute; left: 0; top: 0; z-index: 2; border: 40px solid #000;" id='screen_top'>Необходима поддержка canvas.</canvas>
 <script>
 scale = 1;
 
 var screen = document.getElementById("screen"),
+    screen_top = document.getElementById("screen_top"),
+    screen_bottom = document.getElementById("screen_bottom"),
 	ctx = screen.getContext('2d'),
+	ctx_top = screen_top.getContext('2d'),
+	ctx_bottom = screen_bottom.getContext('2d'),
 	cellSize = 8,
-	pic = new Image(),
+	img_dizzy = new Image(),
+	img_dizzy_mirror = new Image(),
 	pic2 = new Image();
 
-ctx.imageSmoothingQuality = "high";
+ctx.imageSmoothingQuality = "low";
 
 screen.width = 32 * cellSize * scale;
 screen.height = 24 * cellSize * scale;
+screen_top.width = 32 * cellSize * scale;
+screen_top.height = 24 * cellSize * scale;
+screen_bottom.width = 32 * cellSize * scale;
+screen_bottom.height = 24 * cellSize * scale;
 
-pic.src = 'http://www.yolkfolk.com/forum/download/file.php?id=227';
-pic2.src = 'http://www.yolkfolk.com/forum/download/file.php?id=229';
+img_dizzy.src = './dizzy_5_animationt.png';
+img_dizzy_mirror.src = './dizzy_5_animation_mirrort.png';
+pic2.src = './dizzy_6_animation.png';
 
-i = 0;
-
-pic.onload = function () {
+img_dizzy.onload = function () {
     draw_dizzy();
 }
 
-// States are: stand, left, right, jump
+// States are: stand, left, right, jump, down
 dizzy_state="stand";
 dizzy_substate_index=0;
 dizzy_screen_x=128;
@@ -52,20 +64,35 @@ document.onkeydown=function(info) {
     var e = e || window.event;
     if(info.repeat == true) return;
 
-    if (info.which == 37 && dizzy_state!="left") {
-        dizzy_change_state("left");
-    }
-    if (info.which == 39 && dizzy_state!="right") {
-        dizzy_change_state("right");
+    if(dizzy_state == "stand") {
+        if (info.which == 38) {
+            dizzy_change_state("jump");
+        }
+        if (info.which == 37) {
+            dizzy_change_state("left");
+        }
+        if (info.which == 39) {
+            dizzy_change_state("right");
+        }
+        if (info.which == 40) {
+            dizzy_change_state("down");
+        }
+    } else if(dizzy_state == "stand" || dizzy_state == "left" || dizzy_state == "right") {
+        if (info.which == 37) {
+            dizzy_change_state("left");
+        }
+        if (info.which == 39) {
+            dizzy_change_state("right");
+        }
     }
 }
 
 document.onkeyup=function(info) {
     var e = e || window.event;
-    if (info.which == 37) {
+    if (info.which == 37 && dizzy_state == "left") {
         dizzy_change_state("stand");
     }
-    if (info.which == 39) {
+    if (info.which == 39 && dizzy_state == "right") {
         dizzy_change_state("stand");
     }
 }
@@ -76,36 +103,67 @@ function dizzy_change_state(new_state) {
 }
 
 function draw_brick(x, y) {
-    ctx.drawImage(pic2, 96, 217, 8, 8, x, y, 8, 8);
+    ctx_top.drawImage(pic2, 96, 217, 8, 8, x, y, 8, 8);
 }
-//ctx.scale(2,2);
+
+function draw_background() {
+    ctx_bottom.fillStyle="#000000";
+    ctx_bottom.fillRect(0,0,screen_bottom.width, screen_bottom.height);
+}
+
+draw_background();
+for(var x=0;x!=32;x++) draw_brick(x*8, 128+26);
 
 function draw_dizzy() {
-    var size = 12;
+    var size = 4;
     var offset = 2;
     var y_offset=0;
     if (dizzy_state == "stand") {
-        if(i==2 || i==6) y_offset+=1*scale;
         if(dizzy_substate_index==0) y_offset=-1;
-        ctx.drawImage(pic, (dizzy_substate_index + 1) * (16 + size) + offset, 3 * (16+size)-8, 16+size, 16+size, dizzy_screen_x, dizzy_screen_y+y_offset, 16+size, 16+size);
+	ctx.clearRect(0, 0, screen.width, screen.height);
+        ctx.drawImage(img_dizzy, (dizzy_substate_index + 1) * (24 + size) + offset, 3 * (24+size)-8, 24+size, 24+size, dizzy_screen_x, dizzy_screen_y+y_offset, 24+size, 24+size);
         dizzy_substate_index++;
         if (dizzy_substate_index >= 2 ) dizzy_substate_index = 0;
     } else if (dizzy_state == "left") {
-        if(dizzy_substate_index==2 || dizzy_substate_index==6) y_offset=1;
-        ctx.drawImage(pic, dizzy_substate_index * (16+size)+offset, 0, 16+size, 16+size, dizzy_screen_x, dizzy_screen_y+y_offset, 16+size, 16+size);
-        dizzy_substate_index++;
-        if (dizzy_substate_index >= 8 ) dizzy_substate_index = 0;
 	dizzy_screen_x-=4;
-    } else if (dizzy_state == "right") {
         if(dizzy_substate_index==2 || dizzy_substate_index==6) y_offset=1;
-        ctx.drawImage(pic, dizzy_substate_index * (16+size)+offset, 0, 16+size, 16+size, dizzy_screen_x, dizzy_screen_y+y_offset, 16+size, 16+size);
+	ctx.clearRect(0, 0, screen.width, screen.height);
+        ctx.drawImage(img_dizzy, dizzy_substate_index * (24+size)+offset, 0, 24+size, 24+size, dizzy_screen_x, dizzy_screen_y+y_offset, 24+size, 24+size);
         dizzy_substate_index++;
         if (dizzy_substate_index >= 8 ) dizzy_substate_index = 0;
+    } else if (dizzy_state == "right") {
 	dizzy_screen_x+=4;
+        if(dizzy_substate_index==1 || dizzy_substate_index==5) y_offset=1;
+	ctx.clearRect(0, 0, screen.width, screen.height);
+        ctx.drawImage(img_dizzy_mirror, (dizzy_substate_index+1) * (24+size)+offset, 0, 24+size, 24+size, dizzy_screen_x, dizzy_screen_y+y_offset, 24+size, 24+size);
+        dizzy_substate_index++;
+        if (dizzy_substate_index >= 8 ) dizzy_substate_index = 0;
+    } else if (dizzy_state == "jump") {
+        ctx.clearRect(0, 0, screen.width, screen.height);
+        var internal_substate=dizzy_substate_index%8;
+        if(internal_substate<=2) {
+	        ctx.drawImage(img_dizzy, (internal_substate+6) * (24+size)+offset, 25, 24+size, 24+size, dizzy_screen_x, dizzy_screen_y+y_offset, 24+size, 24+size);
+        } else if (internal_substate<=6) {
+	        ctx.drawImage(img_dizzy, (internal_substate-3) * (24+size)+offset, 50, 24+size, 24+size, dizzy_screen_x, dizzy_screen_y+y_offset, 24+size, 24+size);
+        } else {
+	        ctx.drawImage(img_dizzy, (2) * (24+size)+offset, 77, 24+size, 24+size, dizzy_screen_x, dizzy_screen_y+y_offset, 24+size, 24+size);
+        }
+	dizzy_substate_index++;
+	if (dizzy_substate_index <= 8) dizzy_screen_y-=4;
+	else dizzy_screen_y+=4;
+	if (dizzy_substate_index >= 16) {dizzy_change_state("stand");}
+//	if (dizzy_substate_index >= 8) {dizzy_substate_index = 0;}
+    } else if (dizzy_state == "down") {
+        ctx.clearRect(0, 0, screen.width, screen.height);
+        if(internal_substate==0) {
+	        ctx.drawImage(img_dizzy, (3) * (24+size)+offset, 25, 24+size, 24+size, dizzy_screen_x, dizzy_screen_y+y_offset, 24+size, 24+size);
+        } else {
+	        ctx.drawImage(img_dizzy, (2) * (24+size)+offset, 50, 24+size, 24+size, dizzy_screen_x, dizzy_screen_y+y_offset, 24+size, 24+size);
+        }
+	dizzy_substate_index++;
     }
-    if (dizzy_screen_x < 0) dizzy_screen_x=(256-16);
-    if (dizzy_screen_x > 240) dizzy_screen_x=0;
-    for(var x=0;x!=32;x++) draw_brick(x*8, 128+26);
+    if (dizzy_screen_x < 0) dizzy_screen_x=(256-24);
+    if (dizzy_screen_x > (256-24)) dizzy_screen_x=0;
     setTimeout(draw_dizzy,80);
 }
 
