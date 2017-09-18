@@ -7,7 +7,7 @@
 <style>
 <!-- This must make pixelated canvas when scaling, but int don't -->
 canvas {
-    border: 100px solid #000;
+    border: 1px solid #000;
     image-rendering: pixelated;
     image-rendering: optimizeSpeed;
     image-rendering: -moz-crisp-edges;
@@ -20,22 +20,22 @@ canvas {
 </head>
 <body>
 <div style="position: relative;">
-<canvas style="position: absolute; left: 0; top: 0; z-index: 0; border: 40px solid #000;" id='screen_bottom'>Необходима поддержка canvas.</canvas>
-<canvas style="position: absolute; left: 0; top: 0; z-index: 1; border: 40px solid #000;" id='screen'>Необходима поддержка canvas.</canvas>
-<canvas style="position: absolute; left: 0; top: 0; z-index: 2; border: 40px solid #000;" id='screen_top'>Необходима поддержка canvas.</canvas>
+<canvas style="position: absolute; left: 0; top: 0; z-index: 0; border: 1px solid #000;" id='screen_bottom'>Необходима поддержка canvas.</canvas>
+<canvas style="position: absolute; left: 0; top: 0; z-index: 1; border: 1px solid #000;" id='screen'>Необходима поддержка canvas.</canvas>
+<canvas style="position: absolute; left: 0; top: 0; z-index: 2; border: 1px solid #000;" id='screen_top'>Необходима поддержка canvas.</canvas>
 <script>
 scale = 1;
 
 var screen = document.getElementById("screen"),
     screen_top = document.getElementById("screen_top"),
     screen_bottom = document.getElementById("screen_bottom"),
-	ctx = screen.getContext('2d'),
-	ctx_top = screen_top.getContext('2d'),
-	ctx_bottom = screen_bottom.getContext('2d'),
-	cellSize = 8,
-	img_dizzy = new Image(),
-	img_dizzy_mirror = new Image(),
-	pic2 = new Image();
+    ctx = screen.getContext('2d'),
+    ctx_top = screen_top.getContext('2d'),
+    ctx_bottom = screen_bottom.getContext('2d'),
+    cellSize = 8,
+    img_dizzy = new Image(),
+    img_dizzy_mirror = new Image(),
+    pic2 = new Image();
 
 ctx.imageSmoothingQuality = "low";
 
@@ -50,8 +50,69 @@ img_dizzy.src = './dizzy_5_animationt.png';
 img_dizzy_mirror.src = './dizzy_5_animation_mirrort.png';
 pic2.src = './dizzy_6_animation.png';
 
+screen_top.addEventListener('mousedown', function(e) {
+    var x=Math.floor(e.offsetX*3/256);
+    var y=Math.floor(e.offsetY*2/192);
+    if(x == 0 && y == 0) add_control_state("up-left")
+    if(x == 1 && y == 0) add_control_state("up")
+    if(x == 2 && y == 0) add_control_state("up-right")
+    if(x == 0 && y == 1) add_control_state("left")
+    if(x == 1 && y == 1) add_control_state("fire")
+    if(x == 2 && y == 1) add_control_state("right")
+    
+}, false);
+
+screen_top.addEventListener('mouseup', function(e) {
+    var x=Math.floor(e.offsetX*3/256);
+    var y=Math.floor(e.offsetY*2/192);
+    if(x == 0 && y == 0) del_control_state("up-left")
+    if(x == 1 && y == 0) del_control_state("up")
+    if(x == 2 && y == 0) del_control_state("up-right")
+    if(x == 0 && y == 1) del_control_state("left")
+    if(x == 1 && y == 1) del_control_state("fire")
+    if(x == 2 && y == 1) del_control_state("right")
+}, false);
+
+screen_top.addEventListener('touchstart', function(e) {
+    var x=Math.floor(e.touches[0].screenX*3/256);
+    var y=Math.floor(e.touches[0].screenY*2/192);
+    if(x == 0 && y == 0) add_control_state("up-left")
+    if(x == 1 && y == 0) add_control_state("up")
+    if(x == 2 && y == 0) add_control_state("up-right")
+    if(x == 0 && y == 1) add_control_state("left")
+    if(x == 1 && y == 1) add_control_state("fire")
+    if(x == 2 && y == 1) add_control_state("right")
+    
+}, false);
+
+screen_top.addEventListener('touchend', function(e) {
+    var x=Math.floor(e.touches[0].screenX*3/256);
+    var y=Math.floor(e.touches[0].screenY*2/192);
+    if(x == 0 && y == 0) del_control_state("up-left")
+    if(x == 1 && y == 0) del_control_state("up")
+    if(x == 2 && y == 0) del_control_state("up-right")
+    if(x == 0 && y == 1) del_control_state("left")
+    if(x == 1 && y == 1) del_control_state("fire")
+    if(x == 2 && y == 1) del_control_state("right")
+}, false);
+
+screen_top.addEventListener('touchcancel', function(e) {
+    var x=Math.floor(e.touches[0].screenX*3/256);
+    var y=Math.floor(e.touches[0].screenY*2/192);
+    if(x == 0 && y == 0) del_control_state("up-left")
+    if(x == 1 && y == 0) del_control_state("up")
+    if(x == 2 && y == 0) del_control_state("up-right")
+    if(x == 0 && y == 1) del_control_state("left")
+    if(x == 1 && y == 1) del_control_state("fire")
+    if(x == 2 && y == 1) del_control_state("right")
+}, false);
+
 img_dizzy.onload = function () {
     draw_dizzy();
+}
+
+pic2.onload = function () {
+    for(var x=0;x!=32;x++) draw_brick(x*8, 128+26);
 }
 
 // States are: stand, left, right, jump, down
@@ -60,41 +121,50 @@ dizzy_substate_index=0;
 dizzy_screen_x=128;
 dizzy_screen_y=128;
 
+control_state="";
+
+function add_control_state(state_to_add) {
+    if(control_state == "" && state_to_add == "left") control_state="left";
+    else if(control_state == "" && state_to_add == "right") control_state="right";
+    else if(control_state == "" && state_to_add == "up") control_state="up";
+    else if(control_state == "" && state_to_add == "up-left") control_state="up-left";
+    else if(control_state == "" && state_to_add == "up-right") control_state="up-right";
+    else if(control_state == "right" && state_to_add == "left") control_state="left";
+    else if(control_state == "left" && state_to_add == "right") control_state="right";
+    else if(control_state == "up" && state_to_add == "right") control_state="up-right";
+    else if(control_state == "up" && state_to_add == "left") control_state="up-left";
+    else if(control_state == "left" && state_to_add == "up") control_state="up-left";
+    else if(control_state == "right" && state_to_add == "up") control_state="up-right";
+    else if(control_state == "up-right" && state_to_add == "left") control_state="up-left";
+    else if(control_state == "up-left" && state_to_add == "right") control_state="up-right";
+}
+
+function del_control_state(state_to_del) {
+    if(control_state == "left" && state_to_del == "left" ) control_state="";
+    else if(control_state == "right" && state_to_del == "right") control_state="";
+    else if(control_state == "up" && state_to_del == "up") control_state="";
+    else if(control_state == "up-left" && state_to_del == "left") control_state="up";
+    else if(control_state == "up-left" && state_to_del == "up") control_state="left";
+    else if(control_state == "up-right" && state_to_del == "right") control_state="up";
+    else if(control_state == "up-right" && state_to_del == "up") control_state="right";
+    else if(control_state == "up-left" && state_to_del == "up-left") control_state="";
+    else if(control_state == "up-right" && state_to_del == "up-right") control_state="";
+}
+
 document.onkeydown=function(info) {
     var e = e || window.event;
     if(info.repeat == true) return;
 
-    if(dizzy_state == "stand") {
-        if (info.which == 38) {
-            dizzy_change_state("jump");
-        }
-        if (info.which == 37) {
-            dizzy_change_state("left");
-        }
-        if (info.which == 39) {
-            dizzy_change_state("right");
-        }
-        if (info.which == 40) {
-            dizzy_change_state("down");
-        }
-    } else if(dizzy_state == "stand" || dizzy_state == "left" || dizzy_state == "right") {
-        if (info.which == 37) {
-            dizzy_change_state("left");
-        }
-        if (info.which == 39) {
-            dizzy_change_state("right");
-        }
-    }
+    if (info.which == 37) add_control_state("left");
+    if (info.which == 39) add_control_state("right");
+    if (info.which == 38) add_control_state("up");
 }
 
 document.onkeyup=function(info) {
     var e = e || window.event;
-    if (info.which == 37 && dizzy_state == "left") {
-        dizzy_change_state("stand");
-    }
-    if (info.which == 39 && dizzy_state == "right") {
-        dizzy_change_state("stand");
-    }
+    if (info.which == 37) del_control_state("left");
+    if (info.which == 39) del_control_state("right");
+    if (info.which == 38) del_control_state("up");
 }
 
 function dizzy_change_state(new_state) {
@@ -112,7 +182,6 @@ function draw_background() {
 }
 
 draw_background();
-for(var x=0;x!=32;x++) draw_brick(x*8, 128+26);
 
 function draw_dizzy() {
     var size = 4;
@@ -139,6 +208,8 @@ function draw_dizzy() {
         dizzy_substate_index++;
         if (dizzy_substate_index >= 8 ) dizzy_substate_index = 0;
     } else if (dizzy_state == "jump") {
+	if (dizzy_substate_index < 8) dizzy_screen_y-=4;
+	else dizzy_screen_y+=4;
         ctx.clearRect(0, 0, screen.width, screen.height);
         var internal_substate=dizzy_substate_index%8;
         if(internal_substate<=2) {
@@ -149,21 +220,29 @@ function draw_dizzy() {
 	        ctx.drawImage(img_dizzy, (2) * (24+size)+offset, 77, 24+size, 24+size, dizzy_screen_x, dizzy_screen_y+y_offset, 24+size, 24+size);
         }
 	dizzy_substate_index++;
-	if (dizzy_substate_index <= 8) dizzy_screen_y-=4;
-	else dizzy_screen_y+=4;
 	if (dizzy_substate_index >= 16) {dizzy_change_state("stand");}
 //	if (dizzy_substate_index >= 8) {dizzy_substate_index = 0;}
     } else if (dizzy_state == "down") {
         ctx.clearRect(0, 0, screen.width, screen.height);
-        if(internal_substate==0) {
-	        ctx.drawImage(img_dizzy, (3) * (24+size)+offset, 25, 24+size, 24+size, dizzy_screen_x, dizzy_screen_y+y_offset, 24+size, 24+size);
+        if(dizzy_substate_index==0) {
+		y_offset=5;
+	        ctx.drawImage(img_dizzy, (3) * (24+size)+offset, 50, 24+size, 20+size, dizzy_screen_x, dizzy_screen_y+y_offset, 24+size, 20+size);
         } else {
+		y_offset=8;
 	        ctx.drawImage(img_dizzy, (2) * (24+size)+offset, 50, 24+size, 24+size, dizzy_screen_x, dizzy_screen_y+y_offset, 24+size, 24+size);
         }
 	dizzy_substate_index++;
     }
     if (dizzy_screen_x < 0) dizzy_screen_x=(256-24);
     if (dizzy_screen_x > (256-24)) dizzy_screen_x=0;
+
+    if(control_state=="" && dizzy_state == "left") dizzy_change_state("stand");
+    if(control_state=="" && dizzy_state == "right") dizzy_change_state("stand");
+
+    if(control_state=="left" && dizzy_state == "stand") dizzy_change_state("left");
+    if(control_state=="right" && dizzy_state == "stand") dizzy_change_state("right");
+    if(control_state=="up" && dizzy_state == "stand") dizzy_change_state("jump");
+    
     setTimeout(draw_dizzy,80);
 }
 
